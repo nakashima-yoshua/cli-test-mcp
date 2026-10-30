@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cli-test-mcp"
+version = "0.1.0"
+description = "Deterministic CLI batch test runner with evidence capture"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+mcp = ["mcp>=1.0"]
+dev = ["pytest>=8", "jsonschema>=4"]
+
+[project.scripts]
+cli-test = "cli_test_mcp.cli:main"
+cli-test-mcp = "cli_test_mcp.mcp_server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
