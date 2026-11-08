@@ -1,19 +1,31 @@
 # cli-test-mcp
 
-AIがテスト定義を作成し、MCP経由でCLIバッチのテストを実行・結果取得するための汎用テスト基盤（設計段階）。
+A deterministic, sequential CLI test engine with versioned test definitions and attempt-scoped evidence. Upstream AI or humans select cases, preparation and expectations; the engine executes only declared instructions.
 
-## 原則
-- **AI/人（上流）**：対象分析、テスト計画・条件・期待結果の決定、結果分析、再試行判断。
-- **MCP Adapter**：定義の保存・検証、実行指示、結果・証跡取得。
-- **Test Engine**：定義どおりの環境準備、複数バッチ・複数ケース実行、機械的照合、複数ログ収集、証跡保存後のログリセット。
-- **Suite → Case → Attempt → Batch**：試行ごとの独立証跡を保持。
-- CLI単独実行可能。初期版はPython・JSON・ローカルstdio MCP・逐次実行。
+## Current PR-B scope
 
-## 設計文書
-- [開発計画](docs/plan.md)
-- [アーキテクチャ](docs/architecture.md)
-- [入出力契約](docs/contracts.md)
-- [証跡とセキュリティ](docs/evidence-security.md)
+- Suite, Case and Result v1.0 JSON Schema with strict validation
+- Multiple cases, attempts and batches executed sequentially
+- Reusable work slot rebuilt before each attempt; no Git Worktree per test
+- Evidence collection (stdout, stderr, declared logs and expected output files), SHA-256, conditional log reset
+- CLI with distinct exit codes for pass, test failure and execution failure
 
-## 現状
-設計登録済み。エンジン、MCP、JSON Schemaは未実装です。例示したJSONは設計草案です。
+## Quick start
+
+```bash
+python -m pip install -e '.[dev]'
+python -m pytest -q
+cli-test validate path/to/suite.json
+cli-test run path/to/suite.json --registry targets.json --output results
+```
+
+Targets are mapped to **absolute executable paths** in a registry JSON file. Run trusted programs only in dedicated test environments; the runner does **not** enforce OS security isolation. The MCP adapter and database schema reuse are planned in separate PRs.
+
+## Design
+
+- [Plan](docs/plan.md)
+- [Architecture](docs/architecture.md)
+- [Contracts](docs/contracts.md)
+- [Evidence and security](docs/evidence-security.md)
+- [Runner limitations](docs/runner.md)
+- [PR decomposition](docs/pr-split-plan.md)
