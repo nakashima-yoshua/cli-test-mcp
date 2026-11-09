@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/cli-test-mcp/schemas/result/1.0",
+  "title": "CLI test run summary v1.0",
+  "type": "object",
+  "required": ["schema_version", "run_id", "status", "cases"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "status": {"enum": ["running", "completed", "error"]},
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["case_id", "attempt_id", "execution_status", "verdict", "evidence_status", "cleanup_status"],
+        "properties": {
+          "case_id": {"type": "string"},
+          "attempt_id": {"type": "string"},
+          "execution_status": {"enum": ["running", "completed", "error"]},
+          "verdict": {"enum": ["not_evaluated", "passed", "failed"]},
+          "evidence_status": {"enum": ["pending", "verified", "failed"]},
+          "cleanup_status": {"enum": ["pending", "completed", "skipped", "failed"]},
+          "manifest": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
