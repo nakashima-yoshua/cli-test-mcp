@@ -76,7 +76,7 @@ def create_handlers(workspace: str | Path, registry: str | Path, output: str | P
             raise DefinitionError("invalid run ID")
         run_root = safe_path(results, run_id)
         file = safe_path(run_root, artifact)
-        if file.is_symlink() or file.suffix not in (".json", ".log", ".txt"):
+        if file.is_symlink() or file.suffix not in (".json", ".log", ".txt", ".sql", ".csv", ".ini", ".xml"):
             raise DefinitionError("unsupported or unsafe evidence file")
         if not file.is_file():
             raise FileNotFoundError(file)

@@ -4,20 +4,38 @@
   "title": "CLI test case v1.0",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "case_id", "batches"],
+  "required": [
+    "schema_version",
+    "case_id",
+    "batches"
+  ],
   "properties": {
-    "schema_version": {"const": "1.0"},
-    "case_id": {"$ref": "#/$defs/id"},
+    "schema_version": {
+      "const": "1.0"
+    },
+    "case_id": {
+      "$ref": "#/$defs/id"
+    },
     "setup": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["type", "source", "destination"],
+        "required": [
+          "type",
+          "source",
+          "destination"
+        ],
         "properties": {
-          "type": {"const": "copy"},
-          "source": {"$ref": "#/$defs/path"},
-          "destination": {"$ref": "#/$defs/path"}
+          "type": {
+            "const": "copy"
+          },
+          "source": {
+            "$ref": "#/$defs/path"
+          },
+          "destination": {
+            "$ref": "#/$defs/path"
+          }
         }
       }
     },
@@ -27,17 +45,46 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "target"],
+        "required": [
+          "id",
+          "target"
+        ],
         "properties": {
-          "id": {"$ref": "#/$defs/id"},
-          "target": {"$ref": "#/$defs/id"},
-          "args": {"type": "array", "items": {"type": "string"}},
-          "timeout_seconds": {"type": "integer", "minimum": 1, "maximum": 3600},
-          "continue_on_failure": {"type": "boolean"},
+          "id": {
+            "$ref": "#/$defs/id"
+          },
+          "target": {
+            "$ref": "#/$defs/id"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3600
+          },
+          "continue_on_failure": {
+            "type": "boolean"
+          },
           "environment": {
             "type": "object",
-            "propertyNames": {"pattern": "^[A-Za-z_][A-Za-z0-9_]*$"},
-            "additionalProperties": {"type": "string"}
+            "propertyNames": {
+              "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "verification_point_ids": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/$defs/id"
+            }
           }
         }
       }
@@ -47,13 +94,33 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "path"],
+        "required": [
+          "id",
+          "path"
+        ],
         "properties": {
-          "id": {"$ref": "#/$defs/id"},
-          "path": {"$ref": "#/$defs/path"},
-          "capture_after": {"enum": ["each_batch", "attempt"]},
-          "reset": {"enum": ["none", "truncate", "delete"]},
-          "required": {"type": "boolean"}
+          "id": {
+            "$ref": "#/$defs/id"
+          },
+          "path": {
+            "$ref": "#/$defs/path"
+          },
+          "capture_after": {
+            "enum": [
+              "each_batch",
+              "attempt"
+            ]
+          },
+          "reset": {
+            "enum": [
+              "none",
+              "truncate",
+              "delete"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          }
         }
       }
     },
@@ -64,28 +131,160 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": ["type", "batch", "equals"],
+            "required": [
+              "type",
+              "batch",
+              "equals"
+            ],
             "properties": {
-              "type": {"const": "exit_code"},
-              "batch": {"$ref": "#/$defs/id"},
-              "equals": {"type": "integer"}
+              "type": {
+                "const": "exit_code"
+              },
+              "batch": {
+                "$ref": "#/$defs/id"
+              },
+              "equals": {
+                "type": "integer"
+              },
+              "verification_point_ids": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "#/$defs/id"
+                }
+              }
             }
           },
           {
             "type": "object",
             "additionalProperties": false,
-            "required": ["type", "path"],
+            "required": [
+              "type",
+              "path"
+            ],
             "properties": {
-              "type": {"const": "file_exists"},
-              "path": {"$ref": "#/$defs/path"}
+              "type": {
+                "const": "file_exists"
+              },
+              "path": {
+                "$ref": "#/$defs/path"
+              },
+              "verification_point_ids": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "#/$defs/id"
+                }
+              }
             }
           }
         ]
       }
+    },
+    "verification_points": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "description",
+          "expected"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expected": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "artifacts"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id"
+          },
+          "kind": {
+            "enum": [
+              "file",
+              "sql",
+              "http",
+              "screenshot"
+            ]
+          },
+          "capture_after": {
+            "enum": [
+              "setup",
+              "each_batch",
+              "attempt"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "verification_point_ids": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/$defs/id"
+            }
+          },
+          "artifacts": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": false,
+            "properties": {
+              "content": {
+                "$ref": "#/$defs/path"
+              },
+              "statement": {
+                "$ref": "#/$defs/path"
+              },
+              "parameters": {
+                "$ref": "#/$defs/path"
+              },
+              "result": {
+                "$ref": "#/$defs/path"
+              },
+              "request": {
+                "$ref": "#/$defs/path"
+              },
+              "response": {
+                "$ref": "#/$defs/path"
+              },
+              "image": {
+                "$ref": "#/$defs/path"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "$defs": {
-    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$"},
-    "path": {"type": "string", "minLength": 1}
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1
+    }
   }
 }

@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .definitions import DefinitionError, load_json, safe_path, validate_suite
+from .evidence import capture_declared, evaluate_points, record_process
 
 
 def _now():
@@ -154,7 +155,9 @@ def _evaluate_assertions(work: Path, assertions: list, batches: list, evidence: 
             passed = actual
             if passed:
                 outputs.append({"source": str(path), **_snapshot(path, evidence / "outputs" / assertion["path"])})
-        checks.append({"type": assertion["type"], "passed": passed, "actual": actual})
+        checks.append({"type": assertion["type"], "passed": passed, "actual": actual,
+                       "expected": assertion.get("equals", True),
+                       "verification_point_ids": assertion.get("verification_point_ids", [])})
     return checks, outputs
 
 
@@ -199,23 +202,35 @@ def run_suite(suite_file: str | Path, registry_file: str | Path, output_dir: str
             attempt_id = f"ATTEMPT-{number:03d}"
             evidence = run_dir / ref["id"] / attempt_id
             evidence.mkdir(parents=True, exist_ok=False)
-            result = {"case_id": ref["id"], "attempt_id": attempt_id,
+            result = {"suite_id": suite["suite_id"], "case_id": ref["id"], "attempt_id": attempt_id,
                       "execution_status": "running", "verdict": "not_evaluated",
                       "evidence_status": "pending", "cleanup_status": "pending",
-                      "batches": [], "logs": [], "inputs": [], "outputs": [], "checks": []}
+                      "batches": [], "logs": [], "inputs": [], "outputs": [], "checks": [],
+                      "evidence": [], "verification_points": []}
             try:
                 result["inputs"] = _prepare_work(base, slot, case.get("setup", []))
+                capture_declared(slot, evidence, case.get("evidence", []),
+                                 "setup", result["evidence"], _snapshot)
                 for batch in case["batches"]:
                     record = _execute_batch(slot, batch, registry, evidence)
                     result["batches"].append(record)
+                    result["evidence"].append(record_process(batch, record, evidence))
+                    capture_declared(slot, evidence, case.get("evidence", []),
+                                     "each_batch", result["evidence"], _snapshot, batch["id"])
                     _collect_logs(slot, case.get("logs", []), "each_batch", evidence, result["logs"])
                     if (record["timed_out"] or record["exit_code"] != 0) and not batch.get("continue_on_failure", False):
                         break
                 _collect_logs(slot, case.get("logs", []), "attempt", evidence, result["logs"])
+                capture_declared(slot, evidence, case.get("evidence", []),
+                                 "attempt", result["evidence"], _snapshot)
                 result["checks"], result["outputs"] = _evaluate_assertions(
                     slot, case.get("assertions", []), result["batches"], evidence)
+                result["verification_points"] = evaluate_points(
+                    case.get("verification_points", []), result["checks"], result["evidence"])
                 result["execution_status"] = "completed"
-                result["verdict"] = "passed" if result["checks"] and all(c["passed"] for c in result["checks"]) else "failed"
+                checks_pass = bool(result["checks"]) and all(c["passed"] for c in result["checks"])
+                points_pass = all(p["status"] == "passed" for p in result["verification_points"])
+                result["verdict"] = "passed" if checks_pass and points_pass else "failed"
                 result["evidence_status"] = "verified"
                 try:
                     shutil.rmtree(slot)
@@ -233,10 +248,12 @@ def run_suite(suite_file: str | Path, registry_file: str | Path, output_dir: str
                 result["cleanup_status"] = "skipped"
                 result["error"] = f"{type(exc).__name__}: {exc}"
             finally:
-                manifest = {"run_id": run_id, "case_id": ref["id"],
+                manifest = {"run_id": run_id, "suite_id": suite["suite_id"], "case_id": ref["id"],
                             "attempt_id": attempt_id, "recorded_at": _now(),
                             "inputs": result["inputs"], "batches": result["batches"],
                             "logs": result["logs"], "outputs": result["outputs"],
+                            "evidence": result["evidence"],
+                            "verification_points": result["verification_points"],
                             "cleanup_status": result["cleanup_status"]}
                 _write_json(evidence / "result.json", result)
                 _write_json(evidence / "manifest.json", manifest)
