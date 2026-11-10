@@ -82,11 +82,42 @@ def validate_case(case: object, base: str | Path) -> bool:
         safe_path(base, step["destination"])
     for log in case.get("logs", []):
         _check_log_path(Path(base), log["path"])
+    points = [p["id"] for p in case.get("verification_points", [])]
+    if len(points) != len(set(points)):
+        raise DefinitionError("duplicate verification point id")
+    known = set(points)
+
+    def check_points(item: dict) -> None:
+        unknown = set(item.get("verification_point_ids", [])) - known
+        if unknown:
+            raise DefinitionError(f"unknown verification point: {sorted(unknown)}")
+
+    evidences = case.get("evidence", [])
+    ids = [e["id"] for e in evidences]
+    if len(ids) != len(set(ids)):
+        raise DefinitionError("duplicate evidence id")
+    roles = {
+        "file": ({"content"}, {"content"}),
+        "sql": ({"statement", "result"}, {"statement", "parameters", "result"}),
+        "http": ({"request", "response"}, {"request", "response"}),
+        "screenshot": ({"image"}, {"image"}),
+    }
+    for item in evidences:
+        required, permitted = roles[item["kind"]]
+        actual = set(item["artifacts"])
+        if not required <= actual or not actual <= permitted:
+            raise DefinitionError(f"invalid artifact roles: {item['id']}")
+        for path in item["artifacts"].values():
+            safe_path(base, path)
+        check_points(item)
+    for batch in case["batches"]:
+        check_points(batch)
     for assertion in case.get("assertions", []):
         if assertion["type"] == "exit_code" and assertion["batch"] not in batches:
             raise DefinitionError("unknown batch in assertion")
         if assertion["type"] == "file_exists":
             safe_path(base, assertion["path"])
+        check_points(assertion)
     return True
 
 

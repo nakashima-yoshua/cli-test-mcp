@@ -26,3 +26,7 @@ Executables are registered by absolute path and run with the caller's OS privile
 - [Runner](docs/runner.md)
 - [MCP adapter](docs/mcp.md)
 - [PR split](docs/pr-split-plan.md)
+
+## Typed evidence collection
+
+Cases can declare `verification_points` and typed `evidence` for settings/files, SQL statements and results, HTTP request/response, and screenshots. Process stdout/stderr are indexed automatically, with SHA-256 and verification-point links. See [typed evidence](docs/typed-evidence.md). Direct DB/API/GUI capture and one-page PDF rendering are not included in this PR.
