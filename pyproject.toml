@@ -11,6 +11,11 @@ dependencies = ["jsonschema>=4,<5"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+mcp = ["mcp>=1.0,<2"]
+
+[project.scripts]
+cli-test = "cli_test_mcp.cli:main"
+cli-test-mcp = "cli_test_mcp.mcp_server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
